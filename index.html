@@ -75,6 +75,17 @@
   .pillbtn.icon.spin span{ display:inline-block; animation:spin .8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
+  /* 바로가기 (새 창) */
+  .linkrow{ display:flex; gap:6px; margin-top:10px; overflow-x:auto; scrollbar-width:none; }
+  .linkrow::-webkit-scrollbar{ display:none; }
+  .linkbtn{
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:4px;
+    background:var(--blue-tint); color:var(--blue-deep); text-decoration:none;
+    font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:999px; white-space:nowrap;
+  }
+  .linkbtn:hover{ background:#dce6fb; }
+  .linkbtn .ext{ font-size:11px; opacity:.75; }
+
   /* ── 요약 카드 ── */
   .stats{ display:flex; gap:8px; overflow-x:auto; padding:14px 18px 4px; scrollbar-width:none; }
   .stats::-webkit-scrollbar{display:none;}
@@ -113,7 +124,10 @@
     background:var(--field-bg); border:none; color:var(--sub);
     cursor:pointer; font-size:16px; font-weight:700;
   }
-  .item .a{ font-size:14px; color:var(--sub); line-height:1.55; margin-top:4px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .item .a{
+    font-size:14px; color:#3a3a3c; line-height:1.6; margin-top:8px; white-space:pre-wrap; overflow-wrap:anywhere;
+    background:#f3f4f8; border-radius:12px; padding:10px 12px;
+  }
   .item .kws{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
   .item .kw{ font-size:11px; font-weight:700; color:var(--blue-deep); background:var(--blue-tint); padding:3px 9px; border-radius:20px; }
   .item .foot{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:8px; }
@@ -318,16 +332,6 @@
   .gatecard .formmsg{ margin:12px 2px 0; text-align:left; }
   .gatecard .foot{ font-size:12px; color:var(--tert); margin-top:18px; line-height:1.6; }
 
-  /* 바로가기 (새 창) */
-  .linkrow{ display:flex; gap:6px; margin-top:10px; overflow-x:auto; scrollbar-width:none; }
-  .linkrow::-webkit-scrollbar{ display:none; }
-  .linkbtn{
-    flex:0 0 auto; display:inline-flex; align-items:center; gap:4px;
-    background:var(--blue-tint); color:var(--blue-deep); text-decoration:none;
-    font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:999px; white-space:nowrap;
-  }
-  .linkbtn:hover{ background:#dce6fb; }
-  .linkbtn .ext{ font-size:11px; opacity:.75; }
 </style>
 </head>
 <body>
@@ -682,7 +686,7 @@ function render(){
       it.className = 'item';
       it.innerHTML = `
         <div class="qrow"><div class="q">Q. ${escapeHTML(e.question)}</div></div>
-        <div class="a">A. ${escapeHTML(e.answer)}</div>
+        <div class="a">${escapeHTML(e.answer)}</div>
         ${kws.length ? `<div class="kws">${kws.map(k=>`<span class="kw">#${escapeHTML(k)}</span>`).join('')}</div>` : ''}
         <div class="foot">
           <div class="meta">등록 ${fmtDate(e.createdAt)}${edited}</div>
