@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>자주 묻는 질문</title>
+<script src="https://unpkg.com/docx@9.7.1/dist/index.iife.js"></script>
+<style>
+  :root{
+    --bg:#f2f2f7;
+    --card:#ffffff;
+    --ink:#1c1c1e;
+    --sub:#6e6e73;
+    --tert:#8a8a8e;
+    --line:#e5e5ea;
+    --blue:#2f6fed;
+    --blue-deep:#0b3d91;
+    --blue-tint:#eaf0fd;
+    --field-bg:#f7f7f9;
+    --red:#f04452;
+    --green:#22a559;
+    --amber:#e8a317;
+    --shadow:0 1px 2px rgba(18,35,63,.05), 0 6px 16px rgba(18,35,63,.05);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding-bottom:110px;
+  }
+  button{ font-family:inherit; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+  [hidden]{ display:none !important; }
+  .wrap{ max-width:760px; margin:0 auto; }
+
+  /* ── 상단 ── */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:rgba(242,242,247,0.88);
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    border-bottom:0.5px solid var(--line);
+  }
+  .topbar .wrap{ padding:14px 18px 12px; }
+  .titlerow{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .topbar h1{ font-size:26px; font-weight:800; letter-spacing:-0.01em; margin:2px 0; }
+  .topbar .sub{ font-size:13px; color:var(--sub); margin:2px 0 12px; }
+
+  .syncpill{
+    display:inline-flex; align-items:center; gap:7px;
+    border:none; background:var(--card); box-shadow:var(--shadow);
+    border-radius:999px; padding:6px 12px 6px 10px;
+    font-size:12px; font-weight:600; color:var(--sub); cursor:pointer;
+  }
+  .syncpill .dot{ width:8px; height:8px; border-radius:50%; background:var(--tert); flex:0 0 auto; }
+  .syncpill.ok .dot{ background:var(--green); }
+  .syncpill.error .dot{ background:var(--red); }
+  .syncpill.error{ color:var(--red); }
+  .syncpill.syncing .dot{ background:var(--blue); animation:pulse 1s ease-in-out infinite; }
+  @keyframes pulse{ 50%{ opacity:.3; } }
+  @media (prefers-reduced-motion: reduce){ .syncpill.syncing .dot{ animation:none; } }
+
+  .toolbtns{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pillbtn{
+    display:flex; align-items:center; gap:5px;
+    background:var(--card); color:var(--ink);
+    border:none; border-radius:999px; box-shadow:var(--shadow);
+    font-size:13px; font-weight:600;
+    padding:8px 14px; cursor:pointer;
+  }
+  .pillbtn:active{ background:var(--field-bg); }
+  @media (max-width:480px){ .pillbtn .long{ display:none; } .pillbtn{ padding:8px 13px; } }
+  .pillbtn.icon{ padding:8px 12px; color:var(--sub); font-size:15px; line-height:1; }
+  .pillbtn.icon.spin span{ display:inline-block; animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ── 요약 카드 ── */
+  .stats{ display:flex; gap:8px; overflow-x:auto; padding:14px 18px 4px; scrollbar-width:none; }
+  .stats::-webkit-scrollbar{display:none;}
+  .statcard{
+    flex:0 0 auto; min-width:86px;
+    background:var(--card); border-radius:14px;
+    padding:9px 12px; box-shadow:var(--shadow);
+    cursor:pointer; border:2px solid transparent; text-align:left; font:inherit; color:inherit;
+  }
+  .statcard.active{ border-color:var(--blue); }
+  .statcard .dot{ width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:5px; vertical-align:middle; }
+  .statcard .n{ font-size:18px; font-weight:700; line-height:1.1; }
+  .statcard .l{ font-size:11px; color:var(--sub); margin-top:2px; }
+
+  .searchwrap{ padding:10px 18px 6px; }
+  .searchbox{
+    display:flex; align-items:center; gap:6px;
+    background:rgba(118,118,128,0.12);
+    border-radius:12px; padding:9px 11px;
+  }
+  .searchbox svg{ flex:0 0 auto; opacity:0.5; }
+  .searchbox input{ border:none; background:transparent; outline:none; font-size:15px; width:100%; color:var(--ink); }
+  .searchbox input::placeholder{ color:var(--tert); }
+
+  /* ── 목록 ── */
+  .list{ padding:6px 18px 20px; }
+  .grouphead{ font-size:12px; font-weight:700; color:var(--sub); letter-spacing:0.02em; margin:18px 4px 8px; }
+  .group{ background:var(--card); border-radius:18px; box-shadow:var(--shadow); overflow:hidden; }
+  .item{ padding:14px 14px 13px 16px; border-bottom:0.5px solid var(--line); }
+  .item:last-child{ border-bottom:none; }
+  .item .qrow{ display:flex; align-items:flex-start; gap:8px; }
+  .item .q{ font-size:15px; font-weight:650; line-height:1.45; flex:1; word-break:keep-all; overflow-wrap:anywhere; }
+  .item .more{
+    flex:0 0 auto; width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--field-bg); border:none; color:var(--sub);
+    cursor:pointer; font-size:16px; font-weight:700;
+  }
+  .item .a{ font-size:14px; color:var(--sub); line-height:1.55; margin-top:4px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .item .kws{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+  .item .kw{ font-size:11px; font-weight:700; color:var(--blue-deep); background:var(--blue-tint); padding:3px 9px; border-radius:20px; }
+  .item .foot{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:8px; }
+  .item .meta{ font-size:11.5px; color:var(--tert); line-height:1.6; }
+  .item .meta .edited{ color:var(--sub); }
+  .copybtn{
+    flex:0 0 auto; border:none; background:var(--field-bg); color:var(--sub);
+    font-size:12px; font-weight:700; padding:6px 11px; border-radius:999px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:4px;
+  }
+  .copybtn:hover{ background:var(--line); color:var(--ink); }
+  .copybtn.done{ background:#e6f6ec; color:#17803f; }
+
+  .empty{ text-align:center; padding:70px 20px; color:var(--tert); }
+  .empty .big{ font-size:40px; margin-bottom:10px; }
+  .empty .t{ font-size:15px; font-weight:600; color:var(--sub); }
+  .empty .s{ font-size:13px; margin-top:4px; }
+
+  .fab{
+    position:fixed; right:max(20px, calc(50% - 360px)); bottom:28px; z-index:30;
+    width:58px; height:58px; border-radius:50%;
+    background:var(--blue); color:#fff; border:none;
+    font-size:28px; line-height:58px; text-align:center;
+    box-shadow:0 6px 18px rgba(47,111,237,0.35); cursor:pointer;
+  }
+  .fab:hover{ background:var(--blue-deep); }
+  .fab:active{ transform:scale(0.94); }
+
+  /* ── 시트(모달) ── */
+  .backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:40; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+  .backdrop.show{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:41;
+    max-width:760px; margin:0 auto;
+    background:var(--bg); border-radius:20px 20px 0 0;
+    max-height:90vh; overflow-y:auto;
+    transform:translateY(105%); transition:transform 0.3s cubic-bezier(.32,.72,0,1);
+    padding-bottom:28px;
+  }
+  .sheet.show{ transform:translateY(0); }
+  @media (prefers-reduced-motion: reduce){ .sheet, .backdrop{ transition:none; } }
+  .sheethead{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 16px 12px; position:sticky; top:0; background:var(--bg); z-index:2;
+  }
+  .sheethead .grabber{ position:absolute; top:7px; left:50%; transform:translateX(-50%); width:36px; height:5px; border-radius:3px; background:var(--line); }
+  .sheethead h2{ font-size:16px; margin:0; }
+  .sheethead .cancel{ border:none; background:none; font-size:15px; color:var(--sub); cursor:pointer; padding:6px 4px; min-width:56px; text-align:left; }
+  .sheethead .save{
+    border:none; background:var(--blue); color:#fff; cursor:pointer;
+    font-size:14px; font-weight:700; padding:7px 16px; border-radius:999px; min-width:56px;
+    box-shadow:0 4px 12px rgba(47,111,237,.28);
+  }
+  .sheethead .save:hover{ background:var(--blue-deep); }
+  .sheethead .save:disabled{ opacity:.55; cursor:default; box-shadow:none; }
+  .sheethead .spacer{ min-width:56px; }
+
+  .field{ padding:0 16px; margin-bottom:14px; }
+  .field label{ font-size:12px; color:var(--sub); font-weight:600; display:block; margin:0 2px 6px; }
+  .field .catrow{ display:flex; gap:6px; flex-wrap:wrap; }
+  .catchip{
+    padding:7px 12px; border-radius:999px; font-size:13px; font-weight:600;
+    background:var(--card); color:var(--sub); cursor:pointer; border:none; box-shadow:var(--shadow);
+  }
+  .field input[type=text], .field input[type=password], .field input[type=url], .field textarea{
+    width:100%; border:1.5px solid var(--line); border-radius:12px; background:var(--field-bg);
+    padding:12px 13px; font-size:15px; font-family:inherit; color:var(--ink);
+    resize:vertical; outline:none; transition:border-color .15s, background .15s;
+  }
+  .field input:focus, .field textarea:focus{ border-color:#c7ccd6; background:#fff; }
+  .field textarea{ min-height:48px; }
+  .field textarea.big{ min-height:96px; }
+  .field .row{ display:flex; gap:6px; }
+  .field .row input{ flex:1; }
+  .ghostbtn{
+    border:none; background:var(--field-bg); color:var(--sub); border-radius:999px;
+    font-size:13px; font-weight:600; padding:0 14px; cursor:pointer; white-space:nowrap;
+  }
+  .modeswitch{ display:flex; margin:4px 16px 14px; background:rgba(118,118,128,0.12); border-radius:10px; padding:3px; }
+  .modeswitch button{ flex:1; border:none; background:none; padding:7px 0; border-radius:8px; font-size:13px; font-weight:600; color:var(--sub); cursor:pointer; }
+  .modeswitch button.on{ background:var(--card); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,0.08); }
+  .hint{ font-size:12px; color:var(--tert); padding:0 18px; line-height:1.55; margin-top:-6px; margin-bottom:14px; }
+
+  .notice{
+    margin:0 16px 14px; padding:12px 14px; border-radius:14px;
+    background:#fff6e5; color:#7a5200; font-size:13px; line-height:1.55;
+  }
+  .notice b{ color:#5c3d00; }
+  .notice .latest{ margin-top:8px; padding:9px 11px; background:#fff; border-radius:10px; color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere; }
+
+  /* ── 설정 ── */
+  .card{ background:var(--card); border-radius:18px; box-shadow:var(--shadow); margin:0 16px 14px; padding:16px; }
+  .statusline{ display:flex; align-items:flex-start; gap:10px; font-size:13.5px; line-height:1.5; }
+  .statusline .dot{ width:10px; height:10px; border-radius:50%; background:var(--tert); margin-top:5px; flex:0 0 auto; }
+  .statusline.ok .dot{ background:var(--green); }
+  .statusline.error .dot{ background:var(--red); }
+  .statusline .s2{ font-size:12px; color:var(--sub); margin-top:2px; overflow-wrap:anywhere; }
+  .cta{
+    display:block; width:calc(100% - 32px); margin:4px 16px 10px;
+    border:none; background:var(--blue); color:#fff; border-radius:14px;
+    font-size:15px; font-weight:700; padding:14px; cursor:pointer;
+    box-shadow:0 4px 12px rgba(47,111,237,.28);
+  }
+  .cta:hover{ background:var(--blue-deep); }
+  .cta:disabled{ opacity:.6; cursor:default; }
+  .formmsg{ margin:0 18px 12px; font-size:13px; line-height:1.5; color:var(--red); }
+  .subbtns{ display:flex; gap:8px; margin:0 16px 14px; flex-wrap:wrap; }
+  .subbtns .ghostbtn{ padding:10px 14px; background:var(--card); box-shadow:var(--shadow); }
+  .subbtns .ghostbtn.danger{ color:var(--red); }
+
+  details.guide{ margin:6px 16px 0; background:var(--card); border-radius:18px; box-shadow:var(--shadow); }
+  details.guide summary{ list-style:none; cursor:pointer; padding:15px 16px; font-size:14.5px; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  details.guide summary::-webkit-details-marker{ display:none; }
+  details.guide summary .who{ font-size:11.5px; font-weight:600; color:var(--blue-deep); background:var(--blue-tint); padding:4px 10px; border-radius:20px; }
+  details.guide[open] summary{ border-bottom:0.5px solid var(--line); }
+  .steps{ list-style:none; margin:0; padding:6px 16px 4px; }
+  .steps li{ display:flex; gap:11px; padding:10px 0; font-size:13.5px; line-height:1.6; color:var(--ink); }
+  .steps li + li{ border-top:0.5px solid var(--line); }
+  .steps .num{ flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:var(--blue); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .steps code{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; background:var(--field-bg); padding:1px 5px; border-radius:5px; }
+  .steps .tip{ display:block; font-size:12px; color:var(--sub); margin-top:3px; }
+  .guidebtns{ display:flex; gap:8px; padding:4px 16px 12px 49px; flex-wrap:wrap; }
+  .guidebtns button{ border:none; border-radius:999px; font-size:13px; font-weight:700; padding:9px 14px; cursor:pointer; }
+  .guidebtns .primary{ background:var(--blue); color:#fff; }
+  .guidebtns .primary:hover{ background:var(--blue-deep); }
+  .guidebtns .secondary{ background:var(--field-bg); color:var(--sub); }
+  .guidenote{ margin:0 16px 16px; padding:12px 14px; border-radius:14px; background:var(--field-bg); font-size:12.5px; line-height:1.6; color:var(--sub); }
+  .guidenote b{ color:var(--ink); }
+
+  /* ── 목록 도구줄 (개수 · 정렬) ── */
+  .listbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 18px 0; }
+  .listbar .count{ font-size:12px; color:var(--tert); white-space:nowrap; padding-left:4px; }
+  .sortwrap{ position:relative; display:inline-flex; align-items:center; }
+  .sortwrap select{
+    appearance:none; -webkit-appearance:none; border:none; background:var(--card); box-shadow:var(--shadow);
+    color:var(--ink); font:inherit; font-size:12.5px; font-weight:700; padding:7px 28px 7px 12px; border-radius:999px; cursor:pointer;
+  }
+  .sortwrap::after{ content:''; position:absolute; right:12px; top:50%; width:6px; height:6px; margin-top:-5px; border-right:1.6px solid var(--sub); border-bottom:1.6px solid var(--sub); transform:rotate(45deg); pointer-events:none; }
+
+  /* ── 사용방법 ── */
+  .help h3{ font-size:15px; font-weight:800; margin:0 0 4px; }
+  .help .lead{ font-size:12.5px; color:var(--sub); margin:0 0 6px; line-height:1.55; }
+  .help .steps{ padding:2px 0 0; }
+  .help .steps li{ font-size:13.5px; }
+  .catlist{ list-style:none; margin:6px 0 0; padding:0; }
+  .catlist li{ display:flex; gap:10px; padding:9px 0; font-size:13.5px; line-height:1.5; }
+  .catlist li + li{ border-top:0.5px solid var(--line); }
+  .catlist .cdot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; margin-top:6px; }
+  .catlist b{ display:block; font-size:13.5px; }
+  .catlist span.d{ color:var(--sub); font-size:12.5px; }
+  .help .fmt{ margin-top:6px; padding:10px 12px; background:var(--field-bg); border-radius:12px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; line-height:1.6; white-space:pre-wrap; color:var(--ink); }
+
+  /* ── 토스트 · 액션시트 ── */
+  .toast{
+    position:fixed; left:50%; bottom:100px; transform:translateX(-50%) translateY(20px);
+    background:rgba(28,28,30,0.92); color:#fff; font-size:13.5px; font-weight:500; line-height:1.45;
+    padding:11px 18px; border-radius:12px; z-index:60; opacity:0; transition:all 0.25s;
+    pointer-events:none; max-width:calc(100vw - 32px); width:max-content; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .actionsheet{
+    position:fixed; left:16px; right:16px; bottom:20px; z-index:50; max-width:520px; margin:0 auto;
+    opacity:0; pointer-events:none; transition:opacity 0.2s, transform .2s; transform:translateY(10px);
+  }
+  .actionsheet.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  .actionsheet .box{ background:rgba(250,250,252,0.96); backdrop-filter:blur(20px); border-radius:14px; overflow:hidden; margin-bottom:8px; }
+  .actionsheet .title{ font-size:12.5px; color:var(--sub); text-align:center; padding:12px 16px 10px; border-bottom:0.5px solid rgba(60,60,67,0.2); }
+  .actionsheet button{
+    width:100%; border:none; background:none; padding:15px; font-size:16px;
+    border-bottom:0.5px solid rgba(60,60,67,0.2); cursor:pointer; color:var(--ink);
+  }
+  .actionsheet button:last-child{ border-bottom:none; }
+  .actionsheet button.danger{ color:var(--red); }
+  .actionsheet .cancelbox button{ font-weight:700; }
+
+  /* ── 인쇄(PDF) ── */
+  #printArea{ display:none; }
+  #printArea *{ box-sizing:border-box; }
+  #printArea{ font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color:#1C1C1E; }
+  #printArea .ptitle{ font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 6px; }
+  #printArea .pmetaline{ font-size:11px; color:#6E6E73; margin:0 0 14px; padding-bottom:12px; border-bottom:2.5px solid #007AFF; }
+  #printArea .psummary{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:22px; }
+  #printArea .pschip{ font-size:10.5px; font-weight:700; color:#fff; padding:5px 10px; border-radius:980px; }
+  #printArea .pcathead{ font-size:14.5px; font-weight:800; margin:22px 0 9px; padding-bottom:5px; border-bottom:2px solid currentColor; }
+  #printArea .pcathead:first-of-type{ margin-top:0; }
+  #printArea .pitem{
+    margin-bottom:9px; page-break-inside:avoid;
+    background:#F5F5F7; border-radius:0 8px 8px 0;
+    border-top:1px solid #E5E5EA; border-right:1px solid #E5E5EA; border-bottom:1px solid #E5E5EA;
+    border-left:4px solid currentColor; padding:9px 12px;
+  }
+  #printArea .pq{ font-size:12.5px; font-weight:700; color:#1C1C1E; line-height:1.5; }
+  #printArea .pa{ font-size:12px; color:#3A3A3C; margin-top:3px; line-height:1.55; white-space:pre-wrap; }
+  #printArea .pmeta{ font-size:10px; color:#AEAEB2; margin-top:5px; }
+  @media print{
+    body *{ visibility:hidden; }
+    #printArea, #printArea *{ visibility:visible; }
+    #printArea{ display:block; position:absolute; top:0; left:0; width:100%; padding:16px 22px; }
+    @page{ margin:16mm 14mm; }
+  }
+
+  /* ── 노출용 페이지 전용 ── */
+  .gate{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 18px 60px;
+  }
+  .gatecard{
+    width:100%; max-width:400px; background:var(--card); border-radius:24px; box-shadow:var(--shadow);
+    padding:34px 24px 26px; text-align:center;
+  }
+  .gatecard .mark{
+    width:64px; height:64px; border-radius:20px; margin:0 auto 16px; display:flex; align-items:center; justify-content:center;
+    font-size:32px; background:var(--blue-tint);
+  }
+  .gatecard h1{ font-size:24px; font-weight:800; margin:0 0 6px; letter-spacing:-0.01em; }
+  .gatecard .lead{ font-size:14px; color:var(--sub); line-height:1.6; margin:0 0 22px; }
+  .gatecard .keyrow{ display:flex; gap:6px; text-align:left; }
+  .gatecard input[type=password], .gatecard input[type=text]{
+    flex:1; min-width:0; border:1.5px solid var(--line); border-radius:14px; background:var(--field-bg);
+    padding:14px 14px; font-size:16px; font-family:inherit; color:var(--ink); outline:none;
+  }
+  .gatecard input:focus{ border-color:#c7ccd6; background:#fff; }
+  .gatecard .remember{ display:flex; align-items:center; gap:7px; font-size:13px; color:var(--sub); margin:12px 2px 18px; cursor:pointer; text-align:left; }
+  .gatecard .remember input{ width:17px; height:17px; accent-color:var(--blue); margin:0; }
+  .gatecard .cta{ width:100%; margin:0; }
+  .gatecard .formmsg{ margin:12px 2px 0; text-align:left; }
+  .gatecard .foot{ font-size:12px; color:var(--tert); margin-top:18px; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<!-- 접속 키 입력 화면 -->
+<section class="gate" id="gate" hidden>
+  <form class="gatecard" id="gateForm" autocomplete="off">
+    <div class="mark" aria-hidden="true">📚</div>
+    <h1>자주 묻는 질문</h1>
+    <p class="lead">전달받은 접속 키를 입력하면<br>바로 FAQ를 볼 수 있어요.</p>
+    <div class="keyrow">
+      <input type="password" id="gKey" placeholder="접속 키 입력" aria-label="접속 키" spellcheck="false" autocomplete="off">
+      <button class="ghostbtn" type="button" id="gToggle" onclick="toggleGateKey()">보기</button>
+    </div>
+    <label class="remember"><input type="checkbox" id="gRemember" checked>이 기기에서 접속 키 기억하기</label>
+    <button class="cta" type="submit" id="gBtn">시작하기</button>
+    <div class="formmsg" id="gMsg" hidden></div>
+    <div class="foot">접속 키는 FAQ를 전달한 담당자에게 받을 수 있어요.<br>여러 사람이 함께 쓰는 컴퓨터라면 ‘기억하기’를 꺼 주세요.</div>
+  </form>
+</section>
+
+<!-- FAQ 화면 -->
+<div id="app" hidden>
+<header class="topbar">
+  <div class="wrap">
+    <div class="titlerow">
+      <h1>📚 자주 묻는 질문</h1>
+      <button class="syncpill" id="syncPill" onclick="refresh()" title="최신 내용 불러오기"><span class="dot"></span><span id="syncText">불러오는 중…</span></button>
+    </div>
+    <p class="sub">궁금한 내용을 검색하고, 답변을 바로 복사해 쓰세요.</p>
+    <div class="toolbtns">
+      <button class="pillbtn" onclick="openHelp()">사용방법</button>
+      <button class="pillbtn" onclick="exportPDF()" aria-label="PDF로 내보내기"><span>PDF<span class="long">로 내보내기</span></span></button>
+      <button class="pillbtn" onclick="exportDOCX()" aria-label="DOCX로 내보내기"><span>DOCX<span class="long">로 내보내기</span></span></button>
+      <button class="pillbtn icon" id="refreshBtn" onclick="refresh()" title="최신 내용 불러오기" aria-label="새로고침"><span>↻</span></button>
+      <button class="pillbtn icon" onclick="openMoreMenu()" title="더보기" aria-label="더보기">⋯</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="stats" id="stats"></div>
+  <div class="searchwrap">
+    <div class="searchbox">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="#8E8E93" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="searchInput" placeholder="질문, 답변, 검색어로 찾기" oninput="render()" aria-label="검색" autocomplete="off">
+    </div>
+  </div>
+  <div class="listbar">
+    <span class="count" id="listCount"></span>
+    <label class="sortwrap" title="정렬">
+      <select id="sortSelect" onchange="setSort(this.value)" aria-label="정렬" autocomplete="off">
+        <option value="created">최신 등록순</option>
+        <option value="updated">최신 수정순</option>
+        <option value="question">질문순 (가나다)</option>
+      </select>
+    </label>
+  </div>
+  <div class="list" id="list"></div>
+</main>
+</div>
+
+<!-- 사용방법 -->
+<div class="backdrop" id="helpBackdrop" onclick="closeHelp()"></div>
+<div class="sheet help" id="helpSheet" role="dialog" aria-labelledby="helpTitle">
+  <div class="sheethead">
+    <div class="grabber"></div>
+    <button class="cancel" onclick="closeHelp()">닫기</button>
+    <h2 id="helpTitle">사용방법</h2>
+    <span class="spacer"></span>
+  </div>
+  <div class="card">
+    <h3>FAQ 보기</h3>
+    <ul class="catlist">
+      <li><div><b>찾기</b><span class="d">검색창에 단어를 입력하면 질문, 답변, 검색어에서 함께 찾아요. 여러 단어를 쉼표나 띄어쓰기로 구분하면 모두 포함된 FAQ만 보여요.</span></div></li>
+      <li><div><b>분류별로 보기</b><span class="d">위쪽 분류 카드를 누르면 해당 분류만 볼 수 있어요. [전체]를 누르면 다시 모두 보여요.</span></div></li>
+      <li><div><b>정렬</b><span class="d">검색창 아래 오른쪽에서 최신 등록순, 최신 수정순, 질문순으로 바꿀 수 있어요.</span></div></li>
+      <li><div><b>답변 복사</b><span class="d">각 FAQ의 [답변 복사]를 누르면 답변이 클립보드에 복사돼요. 메일이나 메신저에 바로 붙여넣을 수 있어요.</span></div></li>
+      <li><div><b>내보내기</b><span class="d">[PDF로 내보내기]는 인쇄 창에서 대상을 ‘PDF로 저장’으로 바꿔 저장해요. [DOCX로 내보내기]는 워드 파일이 바로 내려받아져요.</span></div></li>
+      <li><div><b>최신 내용</b><span class="d">5분마다 최신 내용을 자동으로 불러와요. 바로 확인하려면 ↻ 버튼을 눌러 주세요.</span></div></li>
+      <li><div><b>접속 키</b><span class="d">접속 키가 바뀌었다는 안내가 나오면, 담당자에게 새 키를 받아 입력해 주세요. ⋯ → [접속 키 다시 입력]에서도 바꿀 수 있어요.</span></div></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>분류 소개</h3>
+    <ul class="catlist" id="helpCats"></ul>
+  </div>
+</div>
+
+<!-- 메뉴 -->
+<div class="backdrop" id="menuBackdrop" onclick="closeMenu()"></div>
+<div class="actionsheet" id="menuSheet" role="menu">
+  <div class="box" id="menuBox"></div>
+  <div class="box cancelbox"><button onclick="closeMenu()">취소</button></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="printArea"></div>
+
+<script>
+// 관리페이지에서 이 파일을 만들 때 웹 앱 주소가 들어가요
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxia2cawOVloqY0-Rmq9ixrrikPnu1xtAIyfkGegnrdf8kmYDtgyiIshcp4GIJxDk6E/exec";
+
+// 분류 (Apps Script 코드의 CATEGORY_LABELS와 같은 이름이어야 해요)
+const CATS = [
+  {key:'delivery',  label:'도서상태/입고',     color:'#FF9500', ink:'#fff', desc:'재고, 입고 일정, 품절·절판 등 도서 상태에 관한 문의'},
+  {key:'newbook',   label:'도서정보',          color:'#34C759', ink:'#fff', desc:'신간 등록, 표지·목차·가격 등 도서 정보 등록·수정 문의'},
+  {key:'marketing', label:'사은품이벤트',      color:'#FF2D55', ink:'#fff', desc:'사은품 제작·증정, 사은품 이벤트 진행에 관한 문의'},
+  {key:'funding',   label:'펀딩/리커버/강연',  color:'#AF52DE', ink:'#fff', desc:'펀딩, 리커버 에디션, 저자 강연 등 기획 상품·행사 문의'},
+  {key:'general',   label:'일반 마케팅',       color:'#007AFF', ink:'#fff', desc:'기획전, 배너·광고 노출 등 사은품 외 마케팅 문의'},
+  {key:'contact',   label:'단순 담당자 안내',  color:'#00A3BF', ink:'#fff', desc:'다른 부서나 담당자를 안내하는 것으로 해결되는 문의'},
+  {key:'etc',       label:'기타',              color:'#8E8E93', ink:'#fff', desc:'위 분류에 해당하지 않는 문의'},
+];
+const API_VERSION = 2;
+const KEY_STORE = 'kyobo_extfaq_view_key_v1';
+const CACHE_STORE = 'kyobo_extfaq_view_cache_v1';
+const SORT_STORE = 'kyobo_extfaq_view_sort_v1';
+const AUTO_REFRESH_MS = 5 * 60 * 1000;
+
+/* ───────── 저장소 ───────── */
+function loadJSON(key, fallback){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; }
+}
+function saveJSON(key, value){ try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
+function removeKey(key){ try{ localStorage.removeItem(key); }catch(e){} }
+
+/* ───────── 도우미 ───────── */
+function normalizeKeywords(value){
+  const seen = new Set(), list = [];
+  String(value || '').split(/[,，、\n]/).forEach(w=>{
+    const k = w.trim();
+    if(k && !seen.has(k.toLowerCase())){ seen.add(k.toLowerCase()); list.push(k); }
+  });
+  return list.join(', ');
+}
+function normalizeEntry(e){
+  return {
+    id: String(e.id), category: CATS.some(c=>c.key===e.category) ? e.category : 'etc',
+    question: String(e.question || ''), answer: String(e.answer || ''), keywords: normalizeKeywords(e.keywords),
+    createdAt: Number(e.createdAt) || Date.now(), updatedAt: Number(e.updatedAt) || Number(e.createdAt) || Date.now()
+  };
+}
+function keywordList(e){ return e.keywords ? e.keywords.split(',').map(k=>k.trim()).filter(Boolean) : []; }
+function isEdited(e){ return e.updatedAt && e.createdAt && e.updatedAt - e.createdAt > 1000; }
+function catInfo(key){ return CATS.find(c=>c.key===key) || CATS[CATS.length-1]; }
+function fmtDate(ms){
+  const d = new Date(ms);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtTime(ms){
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function fmtDateTime(ms){ return `${fmtDate(ms)} ${fmtTime(ms)}`; }
+function escapeHTML(s){
+  return String(s ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ───────── 상태 ───────── */
+const urlReady = /^https:\/\/script\.google\.com\/[^\s"'<>]+\/exec$/.test(String(WEB_APP_URL));
+let viewKey = loadJSON(KEY_STORE, '') || '';
+let entries = viewKey ? loadJSON(CACHE_STORE, []).map(normalizeEntry) : [];
+let activeFilter = 'all';
+let sortMode = loadJSON(SORT_STORE, 'created');
+let sync = { state:'syncing', at:0 };
+let refreshing = false;
+
+/* ───────── 시트 통신 (읽기만) ───────── */
+class ApiError extends Error{ constructor(code, message){ super(message); this.code = code; } }
+
+async function fetchList(key){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 25000);
+  let res;
+  try{
+    res = await fetch(`${WEB_APP_URL}?action=list&key=${encodeURIComponent(key)}&_=${Date.now()}`, { signal: ctrl.signal });
+  }catch(err){
+    throw new ApiError('network', err.name === 'AbortError' ? '응답이 늦어요. 잠시 후 다시 시도해 주세요.' : 'FAQ를 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
+  }finally{
+    clearTimeout(timer);
+  }
+  let data;
+  try{ data = JSON.parse(await res.text()); }
+  catch(e){ throw new ApiError('bad_response', 'FAQ를 불러오지 못했어요. 잠시 후 다시 시도해 주세요. 계속 안 되면 담당자에게 알려주세요.'); }
+  if(data.edition !== 'external' || !(Number(data.apiVersion) >= API_VERSION)){
+    throw new ApiError('setup', '이 페이지의 연결 설정이 올바르지 않아요. 담당자에게 노출용 페이지를 다시 받아 주세요.');
+  }
+  if(!data.ok){
+    if(data.code === 'auth') throw new ApiError('auth', '접속 키가 맞지 않아요. 다시 확인해 주세요.');
+    if(data.code === 'setup') throw new ApiError('setup', '아직 준비 중인 페이지예요. 담당자에게 문의해 주세요.');
+    throw new ApiError(data.code || 'server', data.error || 'FAQ를 불러오지 못했어요.');
+  }
+  return data;
+}
+
+/* ───────── 접속 키 화면 ───────── */
+function showGate(message){
+  document.getElementById('app').hidden = true;
+  document.getElementById('gate').hidden = false;
+  const msg = document.getElementById('gMsg');
+  msg.textContent = message || ''; msg.hidden = !message;
+  const input = document.getElementById('gKey');
+  input.value = '';
+  if(!urlReady){
+    input.disabled = true;
+    document.getElementById('gBtn').disabled = true;
+    msg.textContent = '아직 웹 앱 주소가 들어 있지 않은 페이지예요. 담당자에게 노출용 페이지를 다시 받아 주세요.';
+    msg.hidden = false;
+    return;
+  }
+  setTimeout(()=>input.focus(), 50);
+}
+function showApp(){
+  document.getElementById('gate').hidden = true;
+  document.getElementById('app').hidden = false;
+  render(); renderSync();
+}
+function toggleGateKey(){
+  const k = document.getElementById('gKey');
+  const show = k.type === 'password';
+  k.type = show ? 'text' : 'password';
+  document.getElementById('gToggle').textContent = show ? '숨기기' : '보기';
+}
+document.getElementById('gateForm').addEventListener('submit', async ev=>{
+  ev.preventDefault();
+  const key = document.getElementById('gKey').value.trim();
+  const msg = document.getElementById('gMsg');
+  if(!key){ msg.textContent = '접속 키를 입력해 주세요.'; msg.hidden = false; return; }
+  const btn = document.getElementById('gBtn');
+  btn.disabled = true; btn.textContent = '확인 중…'; msg.hidden = true;
+  try{
+    const d = await fetchList(key);
+    viewKey = key;
+    if(document.getElementById('gRemember').checked){ saveJSON(KEY_STORE, key); saveJSON(CACHE_STORE, d.entries); }
+    else { removeKey(KEY_STORE); removeKey(CACHE_STORE); }
+    entries = d.entries.map(normalizeEntry);
+    sync = { state:'ok', at: Date.now() };
+    showApp();
+  }catch(err){
+    msg.textContent = err.message; msg.hidden = false;
+  }finally{
+    btn.disabled = false; btn.textContent = '시작하기';
+  }
+});
+
+function signOut(message){
+  viewKey = '';
+  entries = [];
+  removeKey(KEY_STORE); removeKey(CACHE_STORE);
+  showGate(message);
+}
+
+/* ───────── 불러오기 ───────── */
+async function refresh(opts = {}){
+  if(!viewKey || refreshing) return;
+  refreshing = true;
+  sync.state = 'syncing'; renderSync();
+  try{
+    const d = await fetchList(viewKey);
+    entries = d.entries.map(normalizeEntry);
+    if(loadJSON(KEY_STORE, '')) saveJSON(CACHE_STORE, d.entries);
+    sync = { state:'ok', at: Date.now() };
+    render();
+    if(!opts.silent) showToast('최신 내용을 불러왔어요');
+  }catch(err){
+    if(err.code === 'auth'){ signOut('접속 키가 바뀌었어요. 담당자에게 받은 새 접속 키를 입력해 주세요.'); return; }
+    sync.state = 'error';
+    showToast(err.message, 3500);
+  }finally{
+    refreshing = false;
+    renderSync();
+  }
+}
+
+function renderSync(){
+  const pill = document.getElementById('syncPill');
+  const text = document.getElementById('syncText');
+  pill.className = 'syncpill';
+  document.getElementById('refreshBtn').classList.toggle('spin', sync.state === 'syncing');
+  if(sync.state === 'syncing'){ pill.classList.add('syncing'); text.textContent = '불러오는 중…'; }
+  else if(sync.state === 'error'){ pill.classList.add('error'); text.textContent = '불러오기 실패 · 다시 시도'; }
+  else { pill.classList.add('ok'); text.textContent = `최신 · ${fmtTime(sync.at)}`; }
+}
+
+/* ───────── 목록 ───────── */
+const byNewest = (a,b)=> b.createdAt - a.createdAt;
+const SORTERS = {
+  created: byNewest,
+  updated: (a,b)=> (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt),
+  question: (a,b)=> a.question.localeCompare(b.question, 'ko', { numeric:true }) || byNewest(a,b),
+};
+function setSort(v){
+  sortMode = SORTERS[v] ? v : 'created';
+  saveJSON(SORT_STORE, sortMode);
+  render();
+}
+
+function renderStats(){
+  const el = document.getElementById('stats');
+  el.innerHTML = '';
+  const make = (key, n, label, color)=>{
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'statcard' + (activeFilter===key ? ' active' : '');
+    card.innerHTML = `<div class="n">${color ? `<span class="dot" style="background:${color}"></span>` : ''}${n}</div><div class="l">${label}</div>`;
+    card.onclick = ()=>{ activeFilter = key; render(); };
+    el.appendChild(card);
+  };
+  make('all', entries.length, '전체');
+  CATS.forEach(c=> make(c.key, entries.filter(e=>e.category===c.key).length, c.label, c.color));
+}
+
+function render(){
+  renderStats();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const terms = q.split(/[,，\s]+/).filter(Boolean);
+  const filtered = entries.filter(e=>{
+    if(activeFilter!=='all' && e.category!==activeFilter) return false;
+    if(!terms.length) return true;
+    const hay = [e.question, e.answer, e.keywords, catInfo(e.category).label].join(' ').toLowerCase();
+    return terms.every(t=>hay.includes(t));
+  }).sort(SORTERS[sortMode] || SORTERS.created);
+  document.getElementById('listCount').textContent = `FAQ ${filtered.length}개`;
+  document.getElementById('sortSelect').value = SORTERS[sortMode] ? sortMode : 'created';
+
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  if(!filtered.length){
+    const searching = q || activeFilter !== 'all';
+    list.innerHTML = searching
+      ? `<div class="empty"><div class="big">🔍</div><div class="t">조건에 맞는 FAQ가 없어요</div><div class="s">검색어나 분류를 바꿔 보세요</div></div>`
+      : `<div class="empty"><div class="big">📋</div><div class="t">아직 등록된 FAQ가 없어요</div><div class="s">곧 채워질 예정이에요</div></div>`;
+    return;
+  }
+  const order = activeFilter==='all' ? CATS.map(c=>c.key) : [activeFilter];
+  order.forEach(key=>{
+    const items = filtered.filter(e=>e.category===key);
+    if(!items.length) return;
+    const c = catInfo(key);
+    const head = document.createElement('div');
+    head.className = 'grouphead';
+    head.textContent = `${c.label} · ${items.length}`;
+    list.appendChild(head);
+    const group = document.createElement('div');
+    group.className = 'group';
+    items.forEach(e=>{
+      const kws = keywordList(e);
+      const edited = isEdited(e) ? `<br><span class="edited">수정 ${fmtDateTime(e.updatedAt)}</span>` : '';
+      const it = document.createElement('div');
+      it.className = 'item';
+      it.innerHTML = `
+        <div class="qrow"><div class="q">Q. ${escapeHTML(e.question)}</div></div>
+        <div class="a">A. ${escapeHTML(e.answer)}</div>
+        ${kws.length ? `<div class="kws">${kws.map(k=>`<span class="kw">#${escapeHTML(k)}</span>`).join('')}</div>` : ''}
+        <div class="foot">
+          <div class="meta">등록 ${fmtDate(e.createdAt)}${edited}</div>
+          <button class="copybtn" data-copy="${escapeHTML(e.id)}">답변 복사</button>
+        </div>`;
+      group.appendChild(it);
+    });
+    list.appendChild(group);
+  });
+}
+
+document.getElementById('list').addEventListener('click', async ev=>{
+  const btn = ev.target.closest('[data-copy]');
+  if(!btn) return;
+  const e = entries.find(x=>x.id===btn.getAttribute('data-copy'));
+  if(!e) return;
+  if(!(await copyText(e.answer, '답변을 복사했어요'))) return;
+  btn.classList.add('done'); btn.textContent = '복사됨 ✓';
+  setTimeout(()=>{ btn.classList.remove('done'); btn.textContent = '답변 복사'; }, 1500);
+});
+
+async function copyText(text, okMsg){
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast(okMsg);
+    return true;
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try{ ok = document.execCommand('copy'); }catch(_){}
+    ta.remove();
+    showToast(ok ? okMsg : '복사하지 못했어요. 직접 선택해서 복사해 주세요');
+    return ok;
+  }
+}
+
+/* ───────── 메뉴 · 사용방법 · 알림 ───────── */
+function openMenu(items){
+  const box = document.getElementById('menuBox');
+  box.innerHTML = '';
+  items.forEach(it=>{
+    const b = document.createElement('button');
+    b.textContent = it.label;
+    if(it.danger) b.className = 'danger';
+    b.onclick = ()=>{ closeMenu(); it.onClick(); };
+    box.appendChild(b);
+  });
+  document.getElementById('menuSheet').classList.add('show');
+  document.getElementById('menuBackdrop').classList.add('show');
+}
+function closeMenu(){
+  document.getElementById('menuSheet').classList.remove('show');
+  document.getElementById('menuBackdrop').classList.remove('show');
+}
+function openMoreMenu(){
+  openMenu([
+    { label:'최신 내용 불러오기', onClick: ()=>refresh() },
+    { label:'접속 키 다시 입력', danger:true, onClick: ()=>signOut('') },
+  ]);
+}
+function openHelp(){
+  document.getElementById('helpCats').innerHTML = CATS.map(c=>
+    `<li><span class="cdot" style="background:${c.color}"></span><div><b>${escapeHTML(c.label)}</b><span class="d">${escapeHTML(c.desc)}</span></div></li>`
+  ).join('');
+  document.getElementById('helpSheet').scrollTop = 0;
+  document.getElementById('helpBackdrop').classList.add('show');
+  document.getElementById('helpSheet').classList.add('show');
+}
+function closeHelp(){
+  document.getElementById('helpBackdrop').classList.remove('show');
+  document.getElementById('helpSheet').classList.remove('show');
+}
+let toastTimer;
+function showToast(msg, ms = 1800){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), ms);
+}
+document.addEventListener('keydown', ev=>{
+  if(ev.key !== 'Escape') return;
+  closeMenu(); closeHelp();
+});
+
+/* ───────── 자동 새로고침 (5분) ───────── */
+function maybeRefresh(force){
+  if(!viewKey || document.hidden || document.getElementById('app').hidden) return;
+  if(Date.now() - sync.at >= (force ? 60000 : AUTO_REFRESH_MS)) refresh({ silent:true });
+}
+document.addEventListener('visibilitychange', ()=>maybeRefresh(true));
+window.addEventListener('focus', ()=>maybeRefresh(true));
+setInterval(()=>maybeRefresh(false), 30000);
+
+/* ───────── 내보내기 ───────── */
+function exportMeta(e){
+  return `등록 ${fmtDate(e.createdAt)}` + (isEdited(e) ? ` · 수정 ${fmtDateTime(e.updatedAt)}` : '');
+}
+
+// PDF (인쇄 → PDF로 저장)
+function exportPDF(){
+  const area = document.getElementById('printArea');
+  const now = new Date();
+  let html = `<div class="ptitle">자주 묻는 질문</div><div class="pmetaline">교보문고 · 생성일 ${fmtDate(now.getTime())} · 총 ${entries.length}건</div>`;
+
+  html += `<div class="psummary">`;
+  CATS.forEach(c=>{
+    const n = entries.filter(e=>e.category===c.key).length;
+    if(n===0) return;
+    html += `<span class="pschip" style="background:${c.color}">${c.label} ${n}</span>`;
+  });
+  html += `</div>`;
+
+  CATS.forEach(c=>{
+    const items = entries.filter(e=>e.category===c.key).sort((a,b)=>a.createdAt-b.createdAt);
+    if(items.length===0) return;
+    html += `<div class="pcathead" style="color:${c.color}">${c.label} <span style="opacity:0.6;font-weight:600;">· ${items.length}건</span></div>`;
+    items.forEach(e=>{
+      html += `<div class="pitem" style="color:${c.color}">
+        <div class="pq" style="color:#1C1C1E;">Q. ${escapeHTML(e.question)}</div>
+        <div class="pa">A. ${escapeHTML(e.answer)}</div>
+        <div class="pmeta">${escapeHTML(exportMeta(e))}</div>
+      </div>`;
+    });
+  });
+  if(entries.length===0){ showToast('내보낼 FAQ가 없습니다'); return; }
+  area.innerHTML = html;
+  window.print();
+}
+
+// DOCX
+async function exportDOCX(){
+  if(entries.length===0){ showToast('내보낼 FAQ가 없습니다'); return; }
+  if(typeof docx === 'undefined'){ showToast('DOCX 기능을 불러오지 못했어요. 인터넷 연결을 확인하고 페이지를 새로고침 해주세요'); return; }
+  try{
+  const {
+    Document, Packer, Paragraph, TextRun, AlignmentType,
+    Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType,
+    Footer, PageNumber
+  } = docx;
+
+  const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const hairline = { style: BorderStyle.SINGLE, size: 2, color: 'E5E5EA' };
+
+  // FAQ 항목 하나를 분류 색상 왼쪽 라인이 있는 카드로 표현
+  function faqCard(entry, colorHex){
+    const cellChildren = [
+      new Paragraph({ children:[ new TextRun({ text:`Q. ${entry.question}`, bold:true, size:21, color:'1C1C1E' }) ], spacing:{ after:60 } }),
+      new Paragraph({ children:[ new TextRun({ text:`A. ${entry.answer}`, size:20, color:'3A3A3C' }) ], spacing:{ after: 40 } }),
+    ];
+    cellChildren.push(new Paragraph({ children:[ new TextRun({ text:exportMeta(entry), size:16, color:'AEAEB2', italics:true }) ] }));
+    return new Table({
+      width:{ size:100, type:WidthType.PERCENTAGE },
+      borders:{ top:noBorder, bottom:noBorder, left:noBorder, right:noBorder, insideHorizontal:noBorder, insideVertical:noBorder },
+      rows:[ new TableRow({ children:[
+        new TableCell({
+          width:{ size:100, type:WidthType.PERCENTAGE },
+          shading:{ fill:'F5F5F7', type:ShadingType.CLEAR, color:'auto' },
+          borders:{ top:hairline, bottom:hairline, right:hairline, left:{ style:BorderStyle.SINGLE, size:24, color:colorHex } },
+          margins:{ top:120, bottom:120, left:220, right:160 },
+          children: cellChildren,
+        })
+      ]})]
+    });
+  }
+
+  const children = [];
+  children.push(new Paragraph({ children:[ new TextRun({ text:'자주 묻는 질문', bold:true, size:44, color:'1C1C1E' }) ], spacing:{ after:60 } }));
+  children.push(new Paragraph({
+    children:[ new TextRun({ text:`교보문고 · 생성일 ${fmtDate(Date.now())} · 총 ${entries.length}건`, size:20, color:'6E6E73' }) ],
+    border:{ bottom:{ color:'007AFF', space:8, style:BorderStyle.SINGLE, size:12 } },
+    spacing:{ after:280 }
+  }));
+
+  // 요약 표
+  const summaryRows = [ new TableRow({ tableHeader:true, children:[
+    new TableCell({ shading:{fill:'1C1C1E',type:ShadingType.CLEAR,color:'auto'}, borders:{top:hairline,bottom:hairline,left:hairline,right:hairline}, margins:{top:80,bottom:80,left:120,right:120}, children:[new Paragraph({children:[new TextRun({text:'분류',bold:true,color:'FFFFFF',size:18})]})] }),
+    new TableCell({ shading:{fill:'1C1C1E',type:ShadingType.CLEAR,color:'auto'}, borders:{top:hairline,bottom:hairline,left:hairline,right:hairline}, margins:{top:80,bottom:80,left:120,right:120}, children:[new Paragraph({children:[new TextRun({text:'건수',bold:true,color:'FFFFFF',size:18})]})] }),
+  ]}) ];
+  CATS.forEach(c=>{
+    const n = entries.filter(e=>e.category===c.key).length;
+    if(n===0) return;
+    summaryRows.push(new TableRow({ children:[
+      new TableCell({ borders:{top:hairline,bottom:hairline,left:hairline,right:hairline}, margins:{top:70,bottom:70,left:120,right:120}, children:[new Paragraph({children:[new TextRun({text:c.label,size:18,color:c.color.replace('#',''),bold:true})]})] }),
+      new TableCell({ borders:{top:hairline,bottom:hairline,left:hairline,right:hairline}, margins:{top:70,bottom:70,left:120,right:120}, children:[new Paragraph({children:[new TextRun({text:String(n),size:18})]})] }),
+    ]}));
+  });
+  children.push(new Table({ width:{size:100,type:WidthType.PERCENTAGE}, rows:summaryRows }));
+  children.push(new Paragraph({ text:'', spacing:{ after:260 } }));
+
+  CATS.forEach(c=>{
+    const items = entries.filter(e=>e.category===c.key).sort((a,b)=>a.createdAt-b.createdAt);
+    if(items.length===0) return;
+    const colorHex = c.color.replace('#','');
+    children.push(new Paragraph({
+      children:[ new TextRun({ text:c.label, bold:true, size:26, color:colorHex }) ],
+      border:{ bottom:{ color:colorHex, space:4, style:BorderStyle.SINGLE, size:6 } },
+      spacing:{ before:220, after:140 }
+    }));
+    items.forEach(e=>{
+      children.push(faqCard(e, colorHex));
+      children.push(new Paragraph({ text:'', spacing:{ after:140 } }));
+    });
+  });
+
+  const doc = new Document({
+    styles:{ default:{ document:{ run:{ font:'맑은 고딕', size:20 } } } },
+    sections:[{
+      footers:{ default: new Footer({ children:[ new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children:[ new TextRun({ text:'교보문고 FAQ · ', size:16, color:'999999' }), new TextRun({ children:[PageNumber.CURRENT], size:16, color:'999999' }) ]
+      })]})},
+      children,
+    }]
+  });
+  const blob = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `외부_FAQ_${new Date().toISOString().slice(0,10)}.docx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('DOCX 파일이 다운로드되었습니다');
+  }catch(err){
+    console.error(err);
+    showToast('DOCX 생성 중 오류가 발생했어요: ' + err.message);
+  }
+}
+
+/* ───────── 시작 ───────── */
+if(!urlReady || !viewKey){
+  showGate('');
+}else{
+  showApp();
+  refresh({ silent:true });
+}
+</script>
+</body>
+</html>
